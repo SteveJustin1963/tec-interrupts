@@ -52,7 +52,8 @@ In this revised example:
 
 With this setup, the Z80's default interrupt behavior should invoke the ISR when an interrupt occurs, without needing to set an interrupt vector table or jump to the ISR manually.
 
-Maintaining an interrupt daisy chain on the Z80 involves connecting multiple devices in a series such that each device's interrupt output is connected to the interrupt input of the next device in the chain. The Z80's `INT` and `IORQ` lines are also connected to this chain. 
+## Maintaining an interrupt daisy chain 
+on the Z80 involves connecting multiple devices in a series such that each device's interrupt output is connected to the interrupt input of the next device in the chain. The Z80's `INT` and `IORQ` lines are also connected to this chain. 
 
 Devices in the chain typically require an `EI` (Enable Interrupts) command to enable their individual interrupt outputs. A device can interrupt the CPU only if all preceding devices in the chain allow it.
 
@@ -134,3 +135,107 @@ In this example:
 
 Note: The addresses (`ORG`) for ISRs, the vector table, and other elements are illustrative. In a real-world application, these would be defined based on your specific hardware and system design.
 
+## Other notable examples 
+related to Z80 interrupt handling could cover different interrupt modes, like `IM 0` (Interrupt Mode 0) and `IM 1` (Interrupt Mode 1), or specific use-cases like handling keyboard inputs, or timing functions using interrupts. Below are some additional examples:
+
+### 1. Interrupt Mode 0 (IM 0)
+
+In this mode, the data put on the data bus during an interrupt acknowledge cycle is executed as an opcode. Typically, a single `RST` instruction is placed on the bus.
+
+```assembly
+ORG 0000h
+LD SP, 0xF000     ; Initialize the Stack Pointer
+DI                ; Disable interrupts during initialization
+IM 0              ; Set to Interrupt Mode 0
+EI                ; Enable interrupts
+
+MAIN:
+    ; Your main loop
+    JR MAIN
+
+; ISR would typically be a single instruction like RST placed on the data bus by hardware.
+; Let's assume RST 30h is placed on the data bus, then ISR at 0030h will be called.
+ORG 0x0030
+ISR_IM0:
+    PUSH AF
+    ; Your ISR code for IM 0
+    POP AF
+    RET
+```
+
+### 2. Interrupt Mode 1 (IM 1)
+
+In this mode, upon receiving an interrupt, the Z80 will automatically jump to location `0x0038`. This mode is easier to handle compared to `IM 0` or `IM 2`.
+
+```assembly
+ORG 0000h
+LD SP, 0xF000     ; Initialize the Stack Pointer
+DI                ; Disable interrupts during initialization
+IM 1              ; Set to Interrupt Mode 1
+EI                ; Enable interrupts
+
+MAIN:
+    ; Your main loop
+    JR MAIN
+
+; ISR at 0x0038 for IM 1
+ORG 0x0038
+ISR_IM1:
+    PUSH AF
+    ; Your ISR code for IM 1
+    POP AF
+    RET
+```
+
+### 3. Handling Keyboard Inputs using Interrupts
+
+```assembly
+ORG 0000h
+LD SP, 0xF000     ; Initialize the Stack Pointer
+DI                ; Disable interrupts during initialization
+IM 1              ; Set to Interrupt Mode 1
+EI                ; Enable interrupts
+
+MAIN:
+    ; Your main loop
+    JR MAIN
+
+; ISR for handling keyboard inputs
+ORG 0x0038
+KEYBOARD_ISR:
+    PUSH AF
+    ; Read the character from the keyboard port (e.g., IN A, (0xFF))
+    ; Process the keypress
+    POP AF
+    RET
+```
+
+### 4. Using Interrupts for Timing Functions
+
+```assembly
+ORG 0000h
+LD SP, 0xF000     ; Initialize the Stack Pointer
+DI                ; Disable interrupts during initialization
+IM 1              ; Set to Interrupt Mode 1
+EI                ; Enable interrupts
+
+; Initialize timer counter
+LD A, 0x00
+LD (0xF100), A    ; Let's say 0xF100 is our timer counter
+
+MAIN:
+    ; Your main loop
+    JR MAIN
+
+; ISR for incrementing a timer
+ORG 0x0038
+TIMER_ISR:
+    PUSH AF
+    LD A, (0xF100)
+    INC A
+    LD (0xF100), A ; Increment timer counter
+    POP AF
+    RET
+```
+
+In all of these examples, the ISRs push the `AF` register pair onto the stack to preserve its value and then pop it back before returning. Depending on what your ISR is doing, you might also need to push and pop other registers.
