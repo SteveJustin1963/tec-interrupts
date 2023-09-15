@@ -1,5 +1,5 @@
-# Z80 interrupt handling, interrupt modes (IM 0, IM 1, and IM 2) and a range of use-cases like the interrupt daisy chain, keyboard inputs, and timing functions. 
-
+# Z80 interrupt handling
+, interrupt modes (IM 0, IM 1, and IM 2) and a range of use-cases like the interrupt daisy chain, keyboard inputs, and timing functions. 
 
 example specifically for the Z80 CPU. Here are some points to note for Z80-specific implementation:
 
